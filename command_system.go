@@ -19,7 +19,8 @@ func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) == 0 {
 		return fmt.Errorf("please provide a username")
 	}
-	s.cfg.User_name = cmd.args[1]
+
+	s.cfg.SetUser(cmd.args[0])
 	fmt.Println("User has been set")
 	return nil
 }
