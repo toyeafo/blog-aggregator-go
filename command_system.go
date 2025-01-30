@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,7 +16,16 @@ func handlerLogin(s *state, cmd command) error {
 		return fmt.Errorf("please provide a username")
 	}
 
-	err := s.cfg.SetUser(cmd.Args[0])
+	username := cmd.Args[0]
+	ctx := context.Background()
+
+	_, err := s.db.GetUser(ctx, sql.NullString{String: username, Valid: true})
+	if err == sql.ErrNoRows {
+		fmt.Println("User doesn't exist in the database: ", err)
+		os.Exit(1)
+	}
+
+	err = s.cfg.SetUser(username)
 	if err != nil {
 		return fmt.Errorf("error setting user %w", err)
 	}
@@ -32,9 +42,16 @@ func handlerRegister(s *state, cmd command) error {
 	username := cmd.Args[0]
 	ctx := context.Background()
 
+	_, err := s.db.GetUser(ctx, sql.NullString{String: username, Valid: true})
+	if err == nil {
+		os.Exit(1)
+	} else if err != sql.ErrNoRows {
+		return fmt.Errorf("error checking user existence: %w", err)
+	}
+
 	newUser, err := s.db.CreateUser(ctx, database.CreateUserParams{
-		Name:      sql.NullString{String: username},
-		ID:        int32(uuid.New().ID()),
+		Name:      sql.NullString{String: username, Valid: true},
+		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	})

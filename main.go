@@ -20,7 +20,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config file %v", err)
 	}
-	stg := &state{cfg: &cfg}
 
 	cmds := commands{commandMap: make(map[string]func(*state, command) error)}
 	cmds.register("login", handlerLogin)
@@ -33,11 +32,16 @@ func main() {
 
 	argCommand := command{Name: os.Args[1], Args: os.Args[2:]}
 
+	db, err := sql.Open("postgres", cfg.Db_url)
+	if err != nil {
+		log.Fatalf("Failed to open database: %v", err)
+	}
+
+	dbQueries := database.New(db)
+	stg := &state{db: dbQueries, cfg: &cfg}
+
 	err = cmds.run(stg, argCommand)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	db, err := sql.Open("postgres", stg.cfg.Db_url)
-	dbQueries := database.New(db)
 }
