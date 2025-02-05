@@ -60,11 +60,35 @@ func handlerRegister(s *state, cmd command) error {
 		return fmt.Errorf("error creating user %w", err)
 	}
 
-	err = s.cfg.SetUser(username)
+	err = s.cfg.SetUser(newUser.Name.String)
 	if err != nil {
 		return fmt.Errorf("error setting user %w", err)
 	}
 
 	fmt.Printf("User created. Details: %v", newUser)
+	return nil
+}
+
+func resetHandler(s *state, cmd command) error {
+	err := s.db.DeleteUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("error deleting users from the table: %w", err)
+	}
+	return nil
+}
+
+func users(s *state, cmd command) error {
+	usernames, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("error retueving users from database: %w", err)
+	}
+
+	for i := 0; i < len(usernames); i++ {
+		if usernames[i].Name.String == s.cfg.User_name {
+			fmt.Println(usernames[i].Name.String, "(current)")
+		} else {
+			fmt.Println(usernames[i].Name.String)
+		}
+	}
 	return nil
 }

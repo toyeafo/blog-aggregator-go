@@ -24,6 +24,8 @@ func main() {
 	cmds := commands{commandMap: make(map[string]func(*state, command) error)}
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", resetHandler)
+	cmds.register("users", users)
 
 	if len(os.Args) < 2 {
 		log.Fatal("not enough arguments")
@@ -34,8 +36,9 @@ func main() {
 
 	db, err := sql.Open("postgres", cfg.Db_url)
 	if err != nil {
-		log.Fatalf("Failed to open database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	defer db.Close()
 
 	dbQueries := database.New(db)
 	stg := &state{db: dbQueries, cfg: &cfg}
