@@ -1,2 +1,5 @@
 postgres://postgres:postgres@localhost:5432/gator
 postgres://postgres:postgres@localhost:5432/gator?sslmode=disable
+
+goose postgres postgres://postgres:postgres@localhost:5432/gator up
+goose postgres postgres://postgres:postgres@localhost:5432/gator down
