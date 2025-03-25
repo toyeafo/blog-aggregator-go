@@ -125,7 +125,18 @@ func handlerAddFeed(s *state, cmd command) error {
 		return fmt.Errorf("error creating feed %w", err)
 	}
 
-	fmt.Printf("Feed created. Details: %v", feed)
+	feedFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		UserID:    userID.ID,
+		FeedID:    feed.ID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		return fmt.Errorf("error creating feed follow record and retrieving field: %w", err)
+	}
+
+	fmt.Printf("Feed and follow records created. Details: %v\n%v", feed, feedFollow)
 	return nil
 }
 
@@ -187,7 +198,7 @@ func handlerFollowing(s *state, cmd command) error {
 		return fmt.Errorf("error retrieving user id: %w", err)
 	}
 
-	following, err := s.db.GetFeedsFollowForUser(context.Background(), sql.NullString{String: userID.Name.String, Valid: true})
+	following, err := s.db.GetFeedsFollowForUser(context.Background(), userID.ID)
 	if err != nil {
 		return fmt.Errorf("error retrieving feeds of user %v, problem: %v", user, err)
 	}

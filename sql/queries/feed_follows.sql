@@ -29,5 +29,5 @@ users.name as user_name,
 feeds.name as feed_name,
 feed_follows.* from feed_follows
 left join users on users.id = feed_follows.user_id
-left join feeds on feeds.user_id = feed_follows.feed_id
-where users.name = $1;
+left join feeds on feeds.id = feed_follows.feed_id
+where feed_follows.user_id = $1;
