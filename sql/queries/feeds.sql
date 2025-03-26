@@ -24,3 +24,9 @@ select * from feeds;
 
 -- name: GetFeedsWithName :many
 select feeds.*, users.name from feeds left join users on feeds.user_id = users.id;
+
+-- name: MarkFeedFetched :exec
+update feeds set last_fetched_at = $1, updated_at = $2 where id = $3;
+
+-- name: GetNextFeedToFetch :one
+select * from feeds order by last_fetched_at desc limit 1;

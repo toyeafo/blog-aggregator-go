@@ -92,12 +92,3 @@ func users(s *state, cmd command) error {
 	}
 	return nil
 }
-
-func handlerAgg(s *state, cmd command) error {
-	aggFeed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
-	if err != nil {
-		return fmt.Errorf("error fetching feed: %v", err)
-	}
-	fmt.Printf("feed has been fetched: %+v\n", aggFeed)
-	return nil
-}
