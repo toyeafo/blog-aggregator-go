@@ -11,11 +11,6 @@ import (
 )
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
-	userID, err := s.db.GetUser(context.Background(), sql.NullString{String: s.cfg.User_name, Valid: true})
-	if err != nil {
-		return fmt.Errorf("error retrieving user id: %w", err)
-	}
-
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("please provide the name and url of the field")
 	}
@@ -24,7 +19,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 		ID:        uuid.New(),
 		Name:      sql.NullString{String: cmd.Args[0], Valid: true},
 		Url:       cmd.Args[1],
-		UserID:    userID.ID,
+		UserID:    user.ID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	})
@@ -34,7 +29,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 
 	feedFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		ID:        uuid.New(),
-		UserID:    userID.ID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
