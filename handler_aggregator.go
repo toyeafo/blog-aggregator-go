@@ -3,41 +3,46 @@ package main
 import (
 	"context"
 	"fmt"
-
-	"github.com/toyeafo/blog-aggregator-go/internal/database"
+	"time"
 )
 
 func handlerAgg(s *state, cmd command) error {
-	aggFeed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	time_between_reqs, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
-		return fmt.Errorf("error fetching feed: %v", err)
+		return fmt.Errorf("error converting argument to duration: %w", err)
 	}
-	fmt.Printf("feed has been fetched: %+v\n", aggFeed)
-	return nil
+	fmt.Printf("Collecting feeds every %s\n", time_between_reqs)
+	ticker := time.NewTicker(time_between_reqs)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			scrapeFeeds(s)
+		case <-context.Background().Done():
+			return nil
+		}
+
+	}
 }
 
-func scrapeFeeds(s *state, cmd command) error {
+func scrapeFeeds(s *state) error {
 	nextFeed, err := s.db.GetNextFeedToFetch(context.Background())
 	if err != nil {
 		return fmt.Errorf("error retrieving next feed: %w", err)
 	}
 
-	err = s.db.MarkFeedFetched(context.Background(), database.MarkFeedFetchedParams{
-		LastFetchedAt: nextFeed.LastFetchedAt,
-		UpdatedAt:     nextFeed.UpdatedAt,
-		ID:            nextFeed.ID,
-	})
+	err = s.db.MarkFeedFetched(context.Background(), nextFeed.ID)
 	if err != nil {
 		return fmt.Errorf("error marking feed as fetched in database: %w", err)
 	}
 
-	feed, err := s.db.GetFeedByURL(context.Background(), nextFeed.Url)
+	aggFeed, err := fetchFeed(context.Background(), nextFeed.Url)
 	if err != nil {
-		return fmt.Errorf("error retrieving feed by URL: %w", err)
+		return fmt.Errorf("error fetching feed: %v", err)
 	}
 
-	for i := range feed.Name.String {
-		fmt.Println(feed.Name.String[i])
+	for _, item := range aggFeed.Channel.Item {
+		fmt.Printf("%s: %s\n", aggFeed.Channel.Title, item.Title)
 	}
 	return nil
 }

@@ -16,12 +16,13 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	}
 
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
-		ID:        uuid.New(),
-		Name:      sql.NullString{String: cmd.Args[0], Valid: true},
-		Url:       cmd.Args[1],
-		UserID:    user.ID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:            uuid.New(),
+		Name:          sql.NullString{String: cmd.Args[0], Valid: true},
+		Url:           cmd.Args[1],
+		UserID:        user.ID,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+		LastFetchedAt: sql.NullTime{},
 	})
 	if err != nil {
 		return fmt.Errorf("error creating feed %w", err)

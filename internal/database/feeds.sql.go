@@ -14,25 +14,27 @@ import (
 )
 
 const createFeed = `-- name: CreateFeed :one
-insert into feeds (id, name, url, user_id, created_at, updated_at)
+insert into feeds (id, name, url, user_id, created_at, updated_at, last_fetched_at)
 values (
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6
+    $6,
+    $7
 )
 returning id, name, url, user_id, created_at, updated_at, last_fetched_at
 `
 
 type CreateFeedParams struct {
-	ID        uuid.UUID
-	Name      sql.NullString
-	Url       string
-	UserID    uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID            uuid.UUID
+	Name          sql.NullString
+	Url           string
+	UserID        uuid.UUID
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	LastFetchedAt sql.NullTime
 }
 
 func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error) {
@@ -43,6 +45,7 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		arg.UserID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.LastFetchedAt,
 	)
 	var i Feed
 	err := row.Scan(
@@ -187,7 +190,7 @@ func (q *Queries) GetFeedsWithName(ctx context.Context) ([]GetFeedsWithNameRow, 
 }
 
 const getNextFeedToFetch = `-- name: GetNextFeedToFetch :one
-select id, name, url, user_id, created_at, updated_at, last_fetched_at from feeds order by last_fetched_at desc limit 1
+select id, name, url, user_id, created_at, updated_at, last_fetched_at from feeds order by last_fetched_at asc nulls first limit 1
 `
 
 func (q *Queries) GetNextFeedToFetch(ctx context.Context) (Feed, error) {
@@ -206,16 +209,11 @@ func (q *Queries) GetNextFeedToFetch(ctx context.Context) (Feed, error) {
 }
 
 const markFeedFetched = `-- name: MarkFeedFetched :exec
-update feeds set last_fetched_at = $1, updated_at = $2 where id = $3
+update feeds set last_fetched_at = now(), updated_at = now() where id = $1 
+returning id, name, url, user_id, created_at, updated_at, last_fetched_at
 `
 
-type MarkFeedFetchedParams struct {
-	LastFetchedAt sql.NullTime
-	UpdatedAt     time.Time
-	ID            uuid.UUID
-}
-
-func (q *Queries) MarkFeedFetched(ctx context.Context, arg MarkFeedFetchedParams) error {
-	_, err := q.db.ExecContext(ctx, markFeedFetched, arg.LastFetchedAt, arg.UpdatedAt, arg.ID)
+func (q *Queries) MarkFeedFetched(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, markFeedFetched, id)
 	return err
 }

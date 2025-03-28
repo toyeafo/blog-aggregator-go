@@ -1,12 +1,13 @@
 -- name: CreateFeed :one
-insert into feeds (id, name, url, user_id, created_at, updated_at)
+insert into feeds (id, name, url, user_id, created_at, updated_at, last_fetched_at)
 values (
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6
+    $6,
+    $7
 )
 returning *;
 
@@ -26,7 +27,8 @@ select * from feeds;
 select feeds.*, users.name from feeds left join users on feeds.user_id = users.id;
 
 -- name: MarkFeedFetched :exec
-update feeds set last_fetched_at = $1, updated_at = $2 where id = $3;
+update feeds set last_fetched_at = now(), updated_at = now() where id = $1 
+returning *;
 
 -- name: GetNextFeedToFetch :one
-select * from feeds order by last_fetched_at desc limit 1;
+select * from feeds order by last_fetched_at asc nulls first limit 1;
