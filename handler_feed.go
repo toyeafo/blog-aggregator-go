@@ -56,6 +56,7 @@ func handlerFeeds(s *state, cmd command) error {
 		fmt.Printf("* Name:          %s\n", feeds[i].Name.String)
 		fmt.Printf("* URL:           %s\n", feeds[i].Url)
 		fmt.Printf("* User:          %s\n", feeds[i].Name_2.String)
+		fmt.Printf("* LastFetchedAt:          %s\n", feeds[i].LastFetchedAt.Time)
 	}
 	return nil
 }
