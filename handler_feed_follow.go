@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/toyeafo/blog-aggregator-go/internal/database"
+	"github.com/toyeafo/gator/internal/database"
 )
 
 func handlerFollow(s *state, cmd command, user database.User) error {

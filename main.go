@@ -6,8 +6,8 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
-	"github.com/toyeafo/blog-aggregator-go/internal/config"
-	"github.com/toyeafo/blog-aggregator-go/internal/database"
+	"github.com/toyeafo/gator/internal/config"
+	"github.com/toyeafo/gator/internal/database"
 )
 
 type state struct {
