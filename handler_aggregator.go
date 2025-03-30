@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,15 +49,9 @@ func scrapeFeeds(s *state) error {
 	}
 
 	for _, item := range aggFeed.Channel.Item {
-		t, _ := time.Parse(time.RFC1123Z, item.PubDate)
-
-		existingPost, err := s.db.GetPostByUrl(context.Background(), item.Link)
-		if err != nil && err != sql.ErrNoRows {
-			return fmt.Errorf("error checking for existing post: %w", err)
-		}
-
-		if existingPost != nil {
-			continue
+		publishedAt := sql.NullTime{}
+		if t, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+			publishedAt = sql.NullTime{Time: t, Valid: true}
 		}
 
 		_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
@@ -66,11 +61,15 @@ func scrapeFeeds(s *state) error {
 			Title:       item.Title,
 			Url:         item.Link,
 			Description: sql.NullString{String: item.Description, Valid: true},
-			PublishedAt: sql.NullTime{Time: t, Valid: true},
+			PublishedAt: publishedAt,
 			FeedID:      nextFeed.ID,
 		})
 		if err != nil {
-			return fmt.Errorf("error adding post to database: %w", err)
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			log.Printf("Couldn't create post: %v", err)
+			continue
 		}
 	}
 	return nil
